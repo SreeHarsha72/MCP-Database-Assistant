@@ -45,7 +45,7 @@ Ollama explains the result to the end user
 
 ```text
 Host ↔ Ollama LLM
-Uses Ollama Python SDK / local Ollama API
+Uses Ollama Python SDK / Ollama API
 
 Host ↔ MCP Client SDK
 Uses normal Python method calls, such as session.call_tool(...)
@@ -102,7 +102,7 @@ The MCP server has below registered tools which are the controlled database oper
 Out-of-context handling is mainly done through the Host’s system prompt. If a custom question is not related to this retail database assistant, the LLM should not call MCP tools for unrelated topics. It should answer with a short message explaining that the demo only supports retail database operations and analytics, such as customers, products, inventory, sales/orders, suppliers, and audit logs.
 
 
-Flow:
+read/write flow:
 
 ```text
 1. Host starts MCP server
