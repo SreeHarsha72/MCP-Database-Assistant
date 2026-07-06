@@ -1,0 +1,7 @@
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+python init_db.py
+streamlit run streamlit_app.py
+
+sqlite3 retail.db

@@ -1,0 +1,4 @@
+mcp>=1.2.0
+ollama>=0.3.0
+python-dotenv>=1.0.1
+streamlit>=1.36.0
