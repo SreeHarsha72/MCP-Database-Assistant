@@ -1,8 +1,10 @@
 # MCP-Database-Assistant
 
-This project demonstrates a real Model-Context-Protocol(MCP) communication flow between Ollama + MCP + SQLite:
 
-Proejct Structure:
+The goal of this project is to build a simple realistic Database AI assistant following  Model-Context-Protocol (MCP) standard that can understand natural-language questions using LLM like Ollama, communicates with database tools through an MCP client-server architecture, selects the correct database operation, and performs safe read/write actions on an external SQLite database.
+
+Project Structure:
+
 ```text
 mcp_db_assistant/
 ├── streamlit_app.py   # Simple browser UI for dropdown/custom questions, write approval, and final answer
@@ -13,7 +15,44 @@ mcp_db_assistant/
 ├── requirements.txt
 ├── .env
 ```
-
+Tech stack used: Streamlit, Python, FAStMCP, SQL
+                      ┌────────────────────┐
+                      │       User         │
+                      └─────────┬──────────┘
+                                │
+                                ▼
+                      ┌────────────────────┐
+                      │    Streamlit UI    │
+                      │ Questions + Answer │
+                      └─────────┬──────────┘
+                                │
+                                ▼
+                      ┌────────────────────┐
+                      │        Host        │
+                      │ Scope Guard        │
+                      │ Tool Router        │
+                      │ Write Approval     │
+                      └─────────┬──────────┘
+                                │
+              ┌─────────────────┴─────────────────┐
+              │                                   │
+              ▼                                   ▼
+   ┌────────────────────┐              ┌────────────────────┐
+   │  Ollama qwen2.5:7b │              │   MCP Client SDK   │
+   │  Tool Decision     │              │   Tool Execution   │
+   └────────────────────┘              └─────────┬──────────┘
+                                                  │
+                                                  ▼
+                                      ┌────────────────────┐
+                                      │    MCP Server      │
+                                      │ Registered Tools   │
+                                      └─────────┬──────────┘
+                                                │
+                                                ▼
+                                      ┌────────────────────┐
+                                      │   SQLite Database  │
+                                      │     retail.db      │
+                                      └────────────────────┘
 
 The main goal is to show this flow clearly:
 
@@ -450,142 +489,6 @@ Audit log records the write.
 
 ---
 
-## 7. Setup and run steps
-
-### Step 1: Install Ollama
-
-Download and install Ollama from the official Ollama website.
-
-After installing, open a terminal and check:
-
-```bash
-ollama --version
-```
-
-### Step 2: Pull the free local model
-
-```bash
-ollama pull qwen2.5:7b
-```
-
-You can test the model:
-
-```bash
-ollama run qwen2.5:7b
-```
-
-Then type:
-
-```text
-Hello
-```
-
-Exit the Ollama chat with:
-
-```text
-/bye
-```
-
-### Step 3: Make sure Ollama server is running
-
-Usually Ollama runs automatically after installation.
-
-If needed, start it manually:
-
-```bash
-ollama serve
-```
-
-Keep that terminal open.
-
-### Step 4: Open the project folder
-
-```bash
-cd real_llm_mcp_db_project
-```
-
-### Step 5: Create Python virtual environment
-
-```bash
-python -m venv .venv
-```
-
-Activate on Windows:
-
-```bash
-.venv\Scripts\activate
-```
-
-Activate on macOS/Linux:
-
-```bash
-source .venv/bin/activate
-```
-
-### Step 6: Install dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-### Step 7: Create `.env`
-
-On Windows:
-
-```bash
-copy .env.example .env
-```
-
-On macOS/Linux:
-
-```bash
-cp .env.example .env
-```
-
-Your `.env` should look like this:
-
-```env
-OLLAMA_MODEL=qwen2.5:7b
-OLLAMA_HOST=http://localhost:11434
-DATABASE_PATH=retail.db
-REQUIRE_WRITE_CONFIRMATION=true
-MAX_TOOL_ROUNDS=3
-OLLAMA_KEEP_ALIVE=30m
-```
-
-### Step 8: Reset/create database
-
-```bash
-python init_db.py
-```
-
-### Step 9A: Run the browser UI
-
-Start the Streamlit app:
-
-```bash
-streamlit run streamlit_app.py
-```
-
-Then open the local URL Streamlit shows, usually:
-
-```text
-http://localhost:8501
-```
-
-The browser UI is intentionally simple. It shows only:
-
-```text
-Questions dropdown
-Other option for a custom question
-Run button
-Final answer
-Conditional write approval checkbox
-```
-
-The write approval checkbox does not appear based on a hardcoded question list. First, the Host filters the MCP tool list, then sends the question and only the relevant tool schemas to Ollama. If the LLM selects a write tool, the Host pauses before execution and the UI then shows the approval checkbox.
-
-All detailed processing is printed in the terminal where Streamlit is running:
 
 ```text
 Host tool-router decision
@@ -605,112 +508,7 @@ The UI does not show tool traces, tool arguments, database previews, or internal
 
 To inspect the database, open a separate terminal and run SQLite commands such as:
 
-```bash
-sqlite3 retail.db
-```
 
-Then run queries such as:
-
-```sql
-.headers on
-.mode column
-SELECT * FROM sales ORDER BY order_id DESC LIMIT 10;
-SELECT * FROM inventory WHERE product_id = 'P200';
-SELECT * FROM inventory_movements ORDER BY movement_id DESC LIMIT 10;
-SELECT * FROM db_audit_log ORDER BY audit_id DESC LIMIT 10;
-```
-
-### Step 9B: Run the terminal CLI
-
-Read example:
-
-```bash
-python host_app.py "What is the west region sales summary?"
-```
-
-Write example:
-
-```bash
-python host_app.py "Restock product P200 by 25 units because supplier shipment arrived, then check P200 inventory."
-```
-
-Since this is a write operation, the Host will ask:
-
-```text
-Confirm write?
-```
-
-Type exactly:
-
-```text
-YES
-```
-
-For demo/testing only, you can auto-confirm a CLI write request with:
-
-```bash
-python host_app.py --yes "Restock product P200 by 25 units because supplier shipment arrived, then check P200 inventory."
-```
-
----
-
-## 8. More example questions
-
-### Check inventory
-
-```bash
-python host_app.py "Check inventory for product P200."
-```
-
-### Create sales order
-
-```bash
-python host_app.py "Create a sales order for customer C001 for 2 units of product P200 through online channel, then check P200 inventory."
-```
-
-### Restock product
-
-```bash
-python host_app.py "Restock product P200 by 25 units because supplier shipment arrived, then show inventory movement history for P200."
-```
-
-### Manual stock adjustment
-
-```bash
-python host_app.py "Decrease P300 inventory by 2 because two units were damaged, then show recent audit logs."
-```
-
-### Create customer
-
-```bash
-python host_app.py "Create a new customer named Nova Bakery in the south region with segment B2B, then show the recent audit log."
-```
-
-### Create product
-
-```bash
-python host_app.py "Create a new product called Webcam Stand in Electronics with stock 20, reorder level 5, supplier StandRight, unit cost 18, and price 45."
-```
-
-### Update price
-
-```bash
-python host_app.py "Update product P200 price to 89.99, then show product details for P200."
-```
-
-### Cancel order
-
-```bash
-python host_app.py "Cancel order 3 because the customer requested cancellation, then check the product inventory."
-```
-
-### Show audit logs
-
-```bash
-python host_app.py "Show the latest 10 database audit log entries."
-```
-
----
 
 ## 9. What happens during a write example
 
@@ -763,80 +561,6 @@ Pull the model:
 ollama pull qwen2.5:7b
 ```
 
-### Problem: model gives final text without calling tools
-
-Try asking the question more directly:
-
-```bash
-python host_app.py "Use the database tools to check inventory for product P200."
-```
-
-Local models are less reliable than paid hosted frontier models for tool calling. `qwen2.5:7b` is a good free starting point, but you can also test:
-
-```bash
-ollama pull llama3.1:8b
-ollama pull llama3-groq-tool-use:8b
-```
-
-Then change `.env`:
-
-```env
-OLLAMA_MODEL=llama3.1:8b
-```
-
-or:
-
-```env
-OLLAMA_MODEL=llama3-groq-tool-use:8b
-```
-
-### Problem: write operation did not happen
-
-In the terminal CLI, the Host asks for confirmation.
-
-You must type exactly:
-
-```text
-YES
-```
-
-In the Streamlit UI, click **Run** first. If the LLM selects a write tool, the UI will then show:
-
-```text
-Approve database write operation
-```
-
-Check it and click **Run approved request**.
-
-Or set this in `.env` for demos:
-
-```env
-REQUIRE_WRITE_CONFIRMATION=false
-```
-
-### Problem: Streamlit command not found
-
-Make sure dependencies are installed inside your virtual environment:
-
-```bash
-pip install -r requirements.txt
-```
-
-Then run:
-
-```bash
-streamlit run streamlit_app.py
-```
-
-### Problem: database state is messy after testing
-
-Reset the database:
-
-```bash
-python init_db.py
-```
-
----
 
 ## 11. Why this project is resume-friendly
 
@@ -856,8 +580,4 @@ This project demonstrates:
 - Safe business tools instead of raw write SQL
 - Clear separation between Host, LLM, MCP Client, MCP Server, and Database
 
-Resume bullet:
 
-```text
-Built a local LLM-powered MCP database assistant using Ollama qwen2.5:7b, Host-side tool routing, MCP client/server communication over stdio, SQLite-backed read/write tools, transactional inventory/order updates, audit logging, human-in-the-loop approval for database-changing operations, and a simple Streamlit UI for question selection and final answers.
-```
