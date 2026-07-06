@@ -15,7 +15,7 @@ mcp_db_assistant/
 ├── requirements.txt
 ├── .env
 ```
-**Tech stack used:**  Python, Ollama-qwen2.5:7b, MCP SDK, FAStMCP, SQL, Streamlit
+**Tech stack used:**  Python, Ollama-qwen2.5:7b, MCP SDK, FastMCP, SQL, Streamlit
 
 ## Workflow:
 
