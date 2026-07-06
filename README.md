@@ -3,7 +3,7 @@
 
 The goal of this project is to build a simple realistic Database AI assistant following  Model-Context-Protocol (MCP) standard that can understand natural-language questions using LLM like Ollama, communicates with database tools through an MCP client-server architecture, selects the correct database operation, and performs safe read/write actions on an external SQLite database.
 
-Project Structure:
+## Project Structure:
 
 ```text
 mcp_db_assistant/
@@ -16,45 +16,8 @@ mcp_db_assistant/
 ├── .env
 ```
 Tech stack used: Streamlit, Python, FAStMCP, SQL
-                      ┌────────────────────┐
-                      │       User         │
-                      └─────────┬──────────┘
-                                │
-                                ▼
-                      ┌────────────────────┐
-                      │    Streamlit UI    │
-                      │ Questions + Answer │
-                      └─────────┬──────────┘
-                                │
-                                ▼
-                      ┌────────────────────┐
-                      │        Host        │
-                      │ Scope Guard        │
-                      │ Tool Router        │
-                      │ Write Approval     │
-                      └─────────┬──────────┘
-                                │
-              ┌─────────────────┴─────────────────┐
-              │                                   │
-              ▼                                   ▼
-   ┌────────────────────┐              ┌────────────────────┐
-   │  Ollama qwen2.5:7b │              │   MCP Client SDK   │
-   │  Tool Decision     │              │   Tool Execution   │
-   └────────────────────┘              └─────────┬──────────┘
-                                                  │
-                                                  ▼
-                                      ┌────────────────────┐
-                                      │    MCP Server      │
-                                      │ Registered Tools   │
-                                      └─────────┬──────────┘
-                                                │
-                                                ▼
-                                      ┌────────────────────┐
-                                      │   SQLite Database  │
-                                      │     retail.db      │
-                                      └────────────────────┘
 
-The main goal is to show this flow clearly:
+## Workflow:
 
 ```text
 User asks a natural-language question
@@ -80,9 +43,7 @@ Host sends result back to Ollama
 Ollama explains the result to the end user
 ```
 
----
-
-## 1. Important communication distinction
+**Important communication distinction**
 
 ```text
 Host ↔ Ollama LLM
@@ -98,131 +59,12 @@ MCP Server ↔ SQLite Database
 Uses normal sqlite3 database code
 ```
 
-The LLM does **not** directly touch the database.
 
-```text
-Host filters what tools are visible.
-LLM decides from the exposed tools.
-Host controls and executes.
-MCP server performs the database operation.
-Database stores the truth.
-```
 
----
 
-## Host-side tool router
 
-The MCP server still registers all tools, but the Host no longer sends all 28 tool schemas to the LLM for every question.
 
-Instead:
 
-```text
-Question: "Restock product P200 by 25 units, then check inventory"
-  ↓
-Host detects inventory/write intent
-  ↓
-Host exposes only relevant tools such as:
-restock_inventory, check_inventory, get_inventory_movements, get_audit_log
-  ↓
-LLM chooses the exact tool and arguments
-```
-
-This improves:
-
-- Response time, because the local LLM reads fewer tool schemas
-- Accuracy, because the model chooses from fewer tools
-- Safety, because unrelated write tools are not exposed when not needed
-
-The terminal prints the router decision for every request:
-
-```text
-Router categories: ['inventory', 'inventory_write', 'products']
-Tools exposed to LLM (8 of 28): [...]
-```
-
-The Host router is rule-based. The LLM is still responsible for deciding the final tool call and arguments from the filtered tool list.
-
----
-
-## 2. Project files
-
-```text
-
-```
-
----
-
-## 3. Database tables
-
-The demo database contains:
-
-```text
-customers
-inventory
-sales
-inventory_movements
-db_audit_log
-```
-
-### `customers`
-
-```text
-customer_id
-customer_name
-segment
-region
-signup_date
-```
-
-### `inventory`
-
-```text
-product_id
-product_name
-category
-stock_qty
-reorder_level
-supplier
-unit_cost
-unit_price
-```
-
-### `sales`
-
-```text
-order_id
-order_date
-customer_id
-region
-product_id
-units
-revenue
-channel
-```
-
-### `inventory_movements`
-
-```text
-movement_id
-product_id
-change_qty
-reason
-reference_id
-created_at
-```
-
-### `db_audit_log`
-
-```text
-audit_id
-action
-table_name
-record_key
-details_json
-created_at
-```
-
----
 
 ## 4. MCP tools exposed by the server
 
