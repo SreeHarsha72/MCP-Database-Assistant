@@ -102,26 +102,3 @@ The MCP server has below registered tools which are the controlled database oper
 Out-of-context handling is mainly done through the Host’s system prompt. If a custom question is not related to this retail database assistant, the LLM should not call MCP tools for unrelated topics. It should answer with a short message explaining that the demo only supports retail database operations and analytics, such as customers, products, inventory, sales/orders, suppliers, and audit logs.
 
 
-read/write flow:
-
-```text
-1. Host starts MCP server
-2. Host discovers all tools registered in MCP server
-3. Host runs the tool router and exposes only relevant inventory/write tools
-4. Host sends user request + filtered tool schemas to Ollama qwen2.5:7b
-5. Ollama decides to call restock_inventory(product_id="P200", quantity=25, note="supplier shipment arrived")
-6. Host asks for human confirmation
-7. User types YES
-8. Host calls MCP Client SDK: session.call_tool(...)
-9. MCP Client sends JSON-RPC request to MCP Server over stdio
-10. MCP Server updates SQLite inventory table
-11. MCP Server inserts inventory_movements row
-12. MCP Server inserts db_audit_log row
-13. Tool result returns to Host
-14. Host sends tool result back to Ollama
-15. Ollama may call check_inventory to verify
-16. Ollama explains final result to user
-```
-
----
-
