@@ -1,6 +1,6 @@
 # MCP-Database-Assistant
 
-This project demonstrates a real MCP communication flow between Ollama + MCP + SQLite:
+This project demonstrates a real Model-Context-Protocol(MCP) communication flow between Ollama + MCP + SQLite:
 
 Proejct Structure:
 ```text
