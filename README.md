@@ -3,7 +3,7 @@
 This project demonstrates a real MCP communication flow between Ollama + MCP + SQLite:
 
 Proejct Structure:
-
+```text
 mcp_db_assistant/
 ├── streamlit_app.py   # Simple browser UI for dropdown/custom questions, write approval, and final answer
 ├── host_app.py        # Host app: Ollama LLM + MCP client orchestration
@@ -12,6 +12,8 @@ mcp_db_assistant/
 ├── retail.db          # Sample SQLite database
 ├── requirements.txt
 ├── .env
+```
+
 
 The main goal is to show this flow clearly:
 
